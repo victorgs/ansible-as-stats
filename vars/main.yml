@@ -1,0 +1,8 @@
+---
+# vars file for as-stats
+
+domain: example.com
+user: user
+password: superhighsecurepassword
+htaccess_path: /etc/apache2/passwordfile
+net_allowed: 192.168.1.0/24

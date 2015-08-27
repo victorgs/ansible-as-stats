@@ -1,0 +1,68 @@
+---
+# tasks file for as-stats
+- name: Install prerequisites
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - rrdtool
+    - librrds-perl
+    - librrd-dev
+    - libfile-find-rule-perl
+    - git
+    - apache2
+    - php5
+    - libapache2-mod-php5
+    - python-passlib
+
+- name: Configure apache
+  template: src=apache_vhost dest=/etc/apache2/sites-enabled/000-default
+  notify:
+  - restart apache
+
+- name: Create htaccess to limit access
+  htpasswd: path={{ htaccess_path }} name={{ user }} password={{ password }} owner=root group=www-data mode=0640
+
+- name: Clone AS-STATS repo
+  git: repo=https://github.com/manuelkasper/AS-Stats dest=/usr/local/etc/as-stats/ update=no
+
+- name: Copy knownlinks
+  copy: src=knownlinks dest=/usr/local/etc/as-stats/conf/knownlinks
+
+- name: Create directory to locate rrd files
+  file: path=/usr/local/etc/as-stats/rrd state=directory mode=0755 
+
+- name: Check if exists index.html
+  stat: path=/var/www/index.html
+  register: default_apache
+
+- name: Check if /usr/local/sbin/asstatd.pl exists
+  stat: path=/usr/local/sbin/asstatd.pl
+  register: asstatd
+
+- name: Check if /usr/local/sbin/asstatd.pl exists
+  stat: path=/usr/local/sbin/rrd-extractstats.pl
+  register: rrd_extractstats
+
+- name: Move asstatd.pl to /usr/local/sbin/
+  shell: mv /usr/local/etc/as-stats/bin/asstatd.pl /usr/local/sbin/
+  when: asstatd.stat.exists == False
+
+- name: Move rrd-extractstats.pl to /usr/local/sbin/
+  shell: mv /usr/local/etc/as-stats/bin/rrd-extractstats.pl /usr/local/sbin/
+  when: rrd_extractstats.stat.exists == False
+
+- name: Remove /var/www
+  file: path=/var/www state=absent
+  when: default_apache.stat.exists == True
+
+- name: Link /usr/local/etc/as-stats/www to /var/www
+  file: src=/usr/local/etc/as-stats/www dest=/var/www state=link
+
+- name: Change user group permissions to www-data
+  file: path=/usr/local/etc/as-stats/www owner=www-data group=www-data state=directory recurse=yes
+
+- name: Copy config.inc
+  copy: src=config.inc dest=/usr/local/etc/as-stats/www/config.inc owner=www-data group=www-data
+
+- name: Add rrd-extractstats cronjob
+  cron: name="rrd-extractstats cronjob"
+        user="root" hour=1 job="rrd-extractstats.pl /usr/local/etc/as-stats/rrd /usr/local/etc/as-stats/conf/knownlinks /usr/local/etc/as-stats/asstats_day.txt"

@@ -1,0 +1,8 @@
+AuthType Basic
+AuthName "Please Log In"
+AuthUserFile {{ htaccess_path }}
+Require valid-user
+Order deny,allow
+Deny from all
+Allow from {{ net_allowed }}
+Satisfy any
