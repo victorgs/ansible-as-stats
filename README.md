@@ -19,9 +19,13 @@ Role Variables
 At vars/main.yml you need to change the variables to your needs:
 
 domain: example.com
+
 user: user
+
 password: superhighsecurepassword
+
 htaccess_path: /etc/apache2/passwordfile
+
 net_allowed: 192.168.1.0/24
 
 Example Playbook
