@@ -20,6 +20,3 @@ script:
   # Run the role/playbook with ansible-playbook.
   - "ansible-playbook -i tests/inventory tests/$SITE --connection=local --sudo"
 
-  # Make sure Ansible is installed (yes, this is contrived, since Ansible was
-  # already installed via pip earlier...).
-  - "which ansible"
